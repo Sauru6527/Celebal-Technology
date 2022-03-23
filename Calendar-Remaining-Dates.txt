@@ -1,0 +1,66 @@
+create procedure spRemainingDates
+as 
+	declare @start varchar(10)
+	set @start = (select max(skdate) from dbo.CalendarDates)
+
+	declare @startDate date 
+	set @startDate = dateadd(day,1,@start)
+
+	declare @end varchar(10)
+	set @end = (cast(year(@startDate) as varchar(4)) + '12' + '31')
+
+	declare @endingDate date 
+	set @endingDate = @end 
+
+	WHILE @startDate <= @endingDate
+	BEGIN
+	INSERT INTO [dbo].[CalendarDates] (
+		  [skdate],
+		  [Date],
+		  [Calendarday],
+		  [CalendarMonth],
+		  [CalendarQuarter],
+		  [CalendarYear],
+		  [DayNameLong],
+		  [DayNameShort],
+		  [DayNumberOfWeek],
+		  [DayNumberOfYear],
+		  [DaySuffix],
+		  [Fiscal_Week],
+		  [Fiscal_Period],
+		  [FiscalQuarter],
+		  [Fiscal_Year],
+		  [Fiscal_Year_Period]
+		  )
+	   SELECT
+		  [skdate] = CAST(YEAR(@startDate) as varchar(4)) + 
+							case when  month(@startDate) between 1 and 9 then ('0'+ CAST(DATEPART(MONTH,@startDate) as varchar(4))) else cast(month(@startDate) as varchar(4))end
+							+ case when day(@startDate) between 1 and 9 then ('0' + CAST(DAY(@startDate) as varchar(4))) else cast(day(@startDate) as varchar(4)) end,
+		  [DATE] = @startDate,
+		  [Calendarday] = DAY(@startDate),
+		  [CalendarMonth] = MONTH(@startDate),
+		  [CalendarQuarter] = DATEPART(QUARTER,@startDate),
+		  [CalendarYear] = YEAR(@startDate),
+		  [DayNameLong] = DATENAME(weekday,@startDate),
+		  [DayNameShort] = left(DATENAME(weekday,@startDate),3),
+		  [DayNumberOfWeek] = DATEPART(weekday,@startDate),
+		  [DayNumberOfYear] = DATEPART(DAYOFYEAR,@startDate),
+		  [DaySuffix] = CAST(DAY(@startDate) as varchar(4)) + 
+		    CASE 
+              WHEN DAY(@startDate) in ('1','21','31') THEN 'st'
+              WHEN DAY(@startDate) in ('2','22') THEN 'nd'
+              WHEN DAY(@startDate) in ('3','23') THEN 'rd'
+              ELSE 'th'
+            END,
+		  [Fiscal_Week] = DATEPART(WEEK,@startDate),
+		  [Fiscal_Period] = DATEPART(MONTH,@startDate),
+		  [FiscalQuarter] = DATEPART(QUARTER,@startDate),
+		  [Fiscal_Year] = DATEPART(YEAR,@startDate),
+		  [Fiscal_Year_Period] = CAST(DATEPART(YEAR,@startDate) as varchar(4)) + CAST(DATEPART(MONTH,@startDate) as varchar(4)) 	 
+
+	   SET @startDate = DATEADD(DAY, 1, @startDate)
+	END
+	select * from [dbo].[calendarDates];
+go
+
+exec dbo.spRemainingDates

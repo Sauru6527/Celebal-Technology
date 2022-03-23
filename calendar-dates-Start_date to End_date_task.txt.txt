@@ -1,0 +1,80 @@
+CREATE TABLE dbo.calendarDates (
+   [skdate] varchar(10) NOT NULL,
+   [Date] DATE NOT NULL,
+   [Calendarday] VARCHAR(10) NOT NULL,
+   [CalendarMonth] VARCHAR(10) NOT NULL,
+   [CalendarQuarter] VARCHAR(10) NOT NULL,
+   [CalendarYear] VARCHAR(10) NOT NULL,
+   [DayNameLong] VARCHAR(10) NOT NULL,
+   [DayNameShort] VARCHAR(10) NOT NULL,
+   [DayNumberOfWeek] VARCHAR(10) NOT NULL,
+   [DayNumberOfYear] VARCHAR(10) NOT NULL,
+   [DaySuffix] VARCHAR(10) NOT NULL,
+   [Fiscal_Week] VARCHAR(10) NOT NULL,
+   [Fiscal_Period] VARCHAR(10) NOT NULL,
+   [FiscalQuarter] VARCHAR(10) NOT NULL,
+   [Fiscal_Year] VARCHAR(10) NOT NULL,
+   [Fiscal_Year_Period] VARCHAR(10) NOT NULL
+   )
+create procedure dbo.datesRange @firstDate varchar(10),@secondDate varchar(10)
+as 
+	truncate table [dbo].[calendarDates]
+
+	DECLARE @CurrentDate DATE
+	set @CurrentDate = @firstDate
+
+	DECLARE @EndDate DATE
+	set @EndDate = @secondDate
+
+	WHILE @CurrentDate < @EndDate
+	BEGIN
+	   INSERT INTO [dbo].[CalendarDates] (
+		  [skdate],
+		  [Date],
+		  [Calendarday],
+		  [CalendarMonth],
+		  [CalendarQuarter],
+		  [CalendarYear],
+		  [DayNameLong],
+		  [DayNameShort],
+		  [DayNumberOfWeek],
+		  [DayNumberOfYear],
+		  [DaySuffix],
+		  [Fiscal_Week],
+		  [Fiscal_Period],
+		  [FiscalQuarter],
+		  [Fiscal_Year],
+		  [Fiscal_Year_Period]
+		  )
+	   SELECT
+		  [skdate] = CAST(YEAR(@CurrentDate) as varchar(4)) + 
+							case when  month(@CurrentDate) between 1 and 9 then ('0'+ CAST(DATEPART(MONTH,@CurrentDate) as varchar(4))) else cast(month(@CurrentDate) as varchar(4))end
+						  + case when day(@CurrentDate) between 1 and 9 then ('0' + CAST(DAY(@CurrentDate) as varchar(4))) else cast(day(@CurrentDate) as varchar(4)) end,
+		  [DATE] = @CurrentDate,
+		  [Calendarday] = DAY(@currentDate),
+		  [CalendarMonth] = MONTH(@currentDate),
+		  [CalendarQuarter] = DATEPART(QUARTER,@currentDate),
+		  [CalendarYear] = YEAR(@currentDate),
+		  [DayNameLong] = DATENAME(weekday,@currentDate),
+		  [DayNameShort] = left(DATENAME(weekday,@CurrentDate),3),
+		  [DayNumberOfWeek] = DATEPART(weekday,@currentDate),
+		  [DayNumberOfYear] = DATEPART(DAYOFYEAR,@CurrentDate),
+		  [DaySuffix] = CAST(DAY(@CurrentDate) as varchar(4)) +
+		    CASE 
+             WHEN DAY(@CurrentDate) in ('1','21','31') THEN 'st'
+             WHEN DAY(@CurrentDate) in ('2','22') THEN 'nd'
+             WHEN DAY(@CurrentDate) in ('3','23') THEN 'rd'
+             ELSE 'th'
+            END,
+		  [Fiscal_Week] = DATEPART(WEEK,@CurrentDate),
+		  [Fiscal_Period] = DATEPART(MONTH,@CurrentDate),
+		  [FiscalQuarter] = DATEPART(QUARTER,@CurrentDate),
+		  [Fiscal_Year] = DATEPART(YEAR,@CurrentDate),
+		  [Fiscal_Year_Period] = CAST(DATEPART(YEAR,@CurrentDate) as varchar(4)) + CAST(DATEPART(MONTH,@CurrentDate) as varchar(4))
+
+	   SET @CurrentDate = DATEADD(DAY, 1, @CurrentDate)
+	END
+	select * from [dbo].[calendarDates];
+go
+
+exec dbo.datesRange @firstDate='20220301',@secondDate='20220312';
